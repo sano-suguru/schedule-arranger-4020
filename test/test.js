@@ -171,17 +171,18 @@ function deleteScheduleAggregate(scheduleId, done, err) {
     where: { scheduleId: scheduleId }
   }).then((availabilities) => {
     const promises = availabilities.map((a) => { return a.destroy(); });
-    Promise.all(promises).then(() => {
-      Candidate.findAll({
-        where: { scheduleId: scheduleId }
-      }).then((candidates) => {
-        const promises = candidates.map((c) => { return c.destroy(); });
-        Promise.all(promises).then(() => {
-          Schedule.findById(scheduleId).then((s) => { s.destroy(); });
-          if (err) return done(err);
-          done();
-        });
-      });
+    return Promise.all(promises);
+  }).then(() => {
+    return Candidate.findAll({
+      where: { scheduleId: scheduleId }
     });
+  }).then((candidates) => {
+    const promises = candidates.map(c => c.destroy());
+    promises.push(promiseCommentDestory);
+    return Promise.all(promises);
+  }).then(() => {
+    Schedule.findById(scheduleId).then(s => s.destroy());
+    if (err) return done(err);
+    done();
   });
 }
